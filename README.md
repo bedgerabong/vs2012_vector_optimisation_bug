@@ -1,0 +1,1 @@
+# vs2012_vector_optimisation_bug
