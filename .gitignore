@@ -29,6 +29,10 @@
 *.app
 *.db
 *.opendb
-/vs2012_vector_optimization_bug/vs2012_vector_optimization_bug/Debug
 *.suo
-/vs2012_vector_optimization_bug/Debug
+*.iobj
+*.ipdb
+*.pdb
+*.tlog
+*.log
+*.lastbuildstate
