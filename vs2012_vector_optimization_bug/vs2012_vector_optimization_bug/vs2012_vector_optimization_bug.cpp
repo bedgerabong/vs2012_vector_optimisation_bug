@@ -6,6 +6,13 @@
 #include <iostream>
 #include <vector>
 
+void print_allocator_construct_call(char const * func, int line)
+{
+  std::cout << func << "(at line " << line << ") Whoops...this function should be elided!" << std::endl;
+}
+
+#define PRINT_CONSTRUCT_CALL(func) print_allocator_construct_call(func,__LINE__);
+
 #if _MSC_VER == 1900
 
 // The simplest standards-conforming allocator
@@ -23,16 +30,43 @@ public:
     {	// construct default my_allocator (do nothing)
     }
 
+    my_minimal_allocator(my_minimal_allocator const &) noexcept
+    {	// construct default my_allocator (do nothing)
+    }
+
+    template<typename U>
+    my_minimal_allocator(my_minimal_allocator<U> const &) noexcept
+    {	// construct default my_allocator (do nothing)
+    }
+
+    bool operator==(my_minimal_allocator const &) const noexcept { return true; }
+
+    bool operator!=(my_minimal_allocator const &) const noexcept { return true; }
 
     __declspec(allocator) pointer allocate(size_t size) const
     {	// allocate array of _Count elements
-        std::cout << __FUNCTION__ << "  " << size << std::endl;
         return static_cast<T*>(::operator new(size * sizeof(T)));
     }
 
     void deallocate(pointer p, size_t) const noexcept
     {	// deallocate object at _Ptr, ignore size
         ::operator delete(p);
+    }
+
+
+    template<class _Objty,
+      class... _Types>
+      void construct(_Objty *_Ptr, _Types&&... _Args)
+    {	// construct _Objty(_Types...) at _Ptr
+      PRINT_CONSTRUCT_CALL(__FUNCSIG__);
+      ::new ((void *)_Ptr) _Objty(_STD forward<_Types>(_Args)...);
+    }
+
+
+    template<class _Uty>
+    void destroy(_Uty *_Ptr)
+    {	// destroy object at _Ptr
+      _Ptr->~_Uty();
     }
 
 };
@@ -77,13 +111,6 @@ public:
 };
 
 #endif 
-
-void print_allocator_construct_call(char const * func, int line)
-{
-    std::cout << func << "(at line " << line << ") Whoops...this function should be elided!" << std::endl;
-}
-
-#define PRINT_CONSTRUCT_CALL(func) print_allocator_construct_call(func,__LINE__);
 
 namespace std {
 
@@ -370,7 +397,7 @@ namespace std {
 
         allocator(const allocator<double>&) _THROW0()
         {	// construct by copying (do nothing)
-            }
+        }
 
         template<class _Other>
         allocator(const allocator<_Other>&) _THROW0()
@@ -427,14 +454,18 @@ namespace std {
 
 } // namespace std {
 
+template<typename T>
+using Vector = std::vector<T>;
+
 
 int main()
 {
     std::cout << "_MSC_VER = " << _MSC_VER << std::endl;
     std::cout << std::endl;
     std::cout << std::endl;
-    std::cout << "std::vector<double> vec1(3);" << std::endl;
-    std::vector<double> vec1(3);
+
+    std::cout << "Vector<double> vec1(3);" << std::endl;
+    Vector<double> vec1(3);
     for (auto i : vec1)
     {
         std::cout << " " << i;
@@ -443,8 +474,8 @@ int main()
     std::cout << std::endl;
 
     {
-        std::cout << "std::vector<double> vec2(3,0.0);" << std::endl;
-        std::vector<double> vec2(3, 0.0);
+        std::cout << "Vector<double> vec2(3,0.0);" << std::endl;
+        Vector<double> vec2(3, 0.0);
         for (auto i : vec2)
         {
             std::cout << " " << i;
@@ -454,8 +485,8 @@ int main()
     }
 
     {
-        std::cout << "std::vector<double> vec2(vec1);" << std::endl;
-        std::vector<double> vec2(vec1);
+        std::cout << "Vector<double> vec2(vec1);" << std::endl;
+        Vector<double> vec2(vec1);
         for (auto i : vec2)
         {
             std::cout << " " << i;
@@ -465,9 +496,9 @@ int main()
     }
 
     {
-        std::cout << "std::vector<double> vec2;" << std::endl;
+        std::cout << "Vector<double> vec2;" << std::endl;
         std::cout << "vec2 = vec1;" << std::endl;
-        std::vector<double> vec2;
+        Vector<double> vec2;
         vec2 = vec1;
         for (auto i : vec2)
         {
@@ -478,8 +509,8 @@ int main()
     }
 
     {
-        std::cout << "std::vector<double> vec2(vec1.begin(), vec1.end());" << std::endl;
-        std::vector<double> vec2(vec1.begin(), vec1.end());
+        std::cout << "Vector<double> vec2(vec1.begin(), vec1.end());" << std::endl;
+        Vector<double> vec2(vec1.begin(), vec1.end());
         for (auto i : vec2)
         {
             std::cout << " " << i;
@@ -489,9 +520,9 @@ int main()
     }
 
     {
-        std::cout << "std::vector<double> vec2;" << std::endl;
+        std::cout << "Vector<double> vec2;" << std::endl;
         std::cout << "vec2.assign(vec1.begin(), vec1.end());" << std::endl;
-        std::vector<double> vec2;
+        Vector<double> vec2;
         vec2.assign(vec1.begin(), vec1.end());
         for (auto i : vec2)
         {
@@ -502,8 +533,8 @@ int main()
     }
 
     {
-        std::cout << "std::vector<double> vec2(vec1.data(), vec1.data()+ vec1.size());" << std::endl;
-        std::vector<double> vec2(vec1.data(), vec1.data()+ vec1.size());
+        std::cout << "Vector<double> vec2(vec1.data(), vec1.data()+ vec1.size());" << std::endl;
+        Vector<double> vec2(vec1.data(), vec1.data()+ vec1.size());
         for (auto i : vec2)
         {
             std::cout << " " << i;
@@ -513,9 +544,9 @@ int main()
     }
 
     {
-        std::cout << "std::vector<double> vec2;" << std::endl;
+        std::cout << "Vector<double> vec2;" << std::endl;
         std::cout << "vec2.assign(vec1.data(), vec1.data()+ vec1.size());" << std::endl;
-        std::vector<double> vec2;
+        Vector<double> vec2;
         vec2.assign(vec1.data(), vec1.data() + vec1.size());
         for (auto i : vec2)
         {
