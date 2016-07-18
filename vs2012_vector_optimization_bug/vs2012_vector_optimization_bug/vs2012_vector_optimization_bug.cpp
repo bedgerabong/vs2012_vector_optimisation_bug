@@ -430,14 +430,25 @@ namespace std {
 
 int main()
 {
+    std::cout << "_MSC_VER = " << _MSC_VER << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
     std::cout << "std::vector<double> vec1(3);" << std::endl;
     std::vector<double> vec1(3);
+    for (auto i : vec1)
+    {
+        std::cout << " " << i;
+    }
     std::cout << std::endl;
     std::cout << std::endl;
 
     {
         std::cout << "std::vector<double> vec2(3,0.0);" << std::endl;
         std::vector<double> vec2(3, 0.0);
+        for (auto i : vec2)
+        {
+            std::cout << " " << i;
+        }
         std::cout << std::endl;
         std::cout << std::endl;
     }
@@ -445,6 +456,10 @@ int main()
     {
         std::cout << "std::vector<double> vec2(vec1);" << std::endl;
         std::vector<double> vec2(vec1);
+        for (auto i : vec2)
+        {
+            std::cout << " " << i;
+        }
         std::cout << std::endl;
         std::cout << std::endl;
     }
@@ -454,6 +469,10 @@ int main()
         std::cout << "vec2 = vec1;" << std::endl;
         std::vector<double> vec2;
         vec2 = vec1;
+        for (auto i : vec2)
+        {
+            std::cout << " " << i;
+        }
         std::cout << std::endl;
         std::cout << std::endl;
     }
@@ -461,6 +480,10 @@ int main()
     {
         std::cout << "std::vector<double> vec2(vec1.begin(), vec1.end());" << std::endl;
         std::vector<double> vec2(vec1.begin(), vec1.end());
+        for (auto i : vec2)
+        {
+            std::cout << " " << i;
+        }
         std::cout << std::endl;
         std::cout << std::endl;
     }
@@ -470,14 +493,38 @@ int main()
         std::cout << "vec2.assign(vec1.begin(), vec1.end());" << std::endl;
         std::vector<double> vec2;
         vec2.assign(vec1.begin(), vec1.end());
+        for (auto i : vec2)
+        {
+            std::cout << " " << i;
+        }
         std::cout << std::endl;
         std::cout << std::endl;
     }
 
-    for (auto i : vec1)
     {
-        std::cout << " " << i;
+        std::cout << "std::vector<double> vec2(vec1.data(), vec1.data()+ vec1.size());" << std::endl;
+        std::vector<double> vec2(vec1.data(), vec1.data()+ vec1.size());
+        for (auto i : vec2)
+        {
+            std::cout << " " << i;
+        }
+        std::cout << std::endl;
+        std::cout << std::endl;
     }
+
+    {
+        std::cout << "std::vector<double> vec2;" << std::endl;
+        std::cout << "vec2.assign(vec1.data(), vec1.data()+ vec1.size());" << std::endl;
+        std::vector<double> vec2;
+        vec2.assign(vec1.data(), vec1.data() + vec1.size());
+        for (auto i : vec2)
+        {
+            std::cout << " " << i;
+        }
+        std::cout << std::endl;
+        std::cout << std::endl;
+    }
+
     std::cout << std::endl << "Finished...." << std::endl;
     return 0;
 }
