@@ -38,3 +38,4 @@
 *.lastbuildstate
 /vs2012_vector_optimization_bug/vs2012_vector_optimization_bug/x64/Debug_vs2012
 /vs2012_vector_optimization_bug/x64/Debug_vs2012
+*.user
