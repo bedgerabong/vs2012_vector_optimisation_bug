@@ -13,110 +13,88 @@ void print_allocator_construct_call(char const * func, int line)
 
 #define PRINT_CONSTRUCT_CALL(func) print_allocator_construct_call(func,__LINE__);
 
-#if _MSC_VER == 1900
+#if _MSC_VER == 1500 // VS2008
 
-// The simplest standards-conforming allocator
+  // The simplest standards-conforming allocator
 template<typename T>
-class my_minimal_allocator
-{	// generic my_allocator for type double
+class aligned_allocator
+{	// generic aligned_allocator for type double
 public:
 
-    typedef T value_type;
+  typedef T value_type;
 
-    typedef value_type * pointer;
-    typedef value_type const *const_pointer;
+  typedef value_type * pointer;
+  typedef value_type const *const_pointer;
 
-    my_minimal_allocator() noexcept
-    {	// construct default my_allocator (do nothing)
-    }
+	typedef value_type& reference;
+	typedef const value_type& const_reference;
 
-    my_minimal_allocator(my_minimal_allocator const &) noexcept
-    {	// construct default my_allocator (do nothing)
-    }
+  typedef size_t size_type;
+  typedef ptrdiff_t difference_type;
 
-    template<typename U>
-    my_minimal_allocator(my_minimal_allocator<U> const &) noexcept
-    {	// construct default my_allocator (do nothing)
-    }
+  template<class U>
+  struct rebind
+  {	// convert this type to allocator<_Other>
+    typedef aligned_allocator<U> other;
+  };
 
-    bool operator==(my_minimal_allocator const &) const noexcept { return true; }
+  aligned_allocator()
+  {	// construct default aligned_allocator (do nothing)
+  }
 
-    bool operator!=(my_minimal_allocator const &) const noexcept { return true; }
+  aligned_allocator(aligned_allocator const &)
+  {	// construct default aligned_allocator (do nothing)
+  }
 
-    __declspec(allocator) pointer allocate(size_t size) const
-    {	// allocate array of _Count elements
-        return static_cast<T*>(::operator new(size * sizeof(T)));
-    }
+  template<typename U>
+  aligned_allocator(aligned_allocator<U> const &)
+  {	// construct default aligned_allocator (do nothing)
+  }
 
-    void deallocate(pointer p, size_t) const noexcept
-    {	// deallocate object at _Ptr, ignore size
-        ::operator delete(p);
-    }
+  bool operator==(aligned_allocator const &) const { return true; }
 
+  bool operator!=(aligned_allocator const &) const { return true; }
 
-    template<class _Objty,
-      class... _Types>
-      void construct(_Objty *_Ptr, _Types&&... _Args)
-    {	// construct _Objty(_Types...) at _Ptr
-      PRINT_CONSTRUCT_CALL(__FUNCSIG__);
-      ::new ((void *)_Ptr) _Objty(_STD forward<_Types>(_Args)...);
-    }
+  pointer allocate(size_t size) const
+  {	// allocate array of _Count elements
+    return static_cast<T*>(::operator new(size * sizeof(T)));
+  }
 
+  void deallocate(pointer p, size_t) const
+  {	// deallocate object at _Ptr, ignore size
+    ::operator delete(p);
+  }
 
-    template<class _Uty>
-    void destroy(_Uty *_Ptr)
-    {	// destroy object at _Ptr
-      _Ptr->~_Uty();
-    }
+  void construct(double *p)
+  {	// default construct object at _Ptr
+    PRINT_CONSTRUCT_CALL(__FUNCSIG__);
+    ::new ((void *)p) double();
+  }
+
+  void construct(double *p, const double& val)
+  {	// construct object at _Ptr with value _Val
+    PRINT_CONSTRUCT_CALL(__FUNCSIG__);
+    ::new ((void *)p) double(val);
+  }
+
+  template<class U>
+  void destroy(U * p)
+  {	// destroy object at _Ptr
+    p->~U();
+  }
+
+	size_t max_size() const _THROW0()
+	{	// estimate maximum array size
+		return ((size_t)(-1) / sizeof(double));
+	}
 
 };
 
-template<typename T>
-class my_allocator
-{	// generic my_allocator for type double
-public:
-
-    typedef T value_type;
-
-    typedef value_type * pointer;
-    typedef value_type const *const_pointer;
-
-    my_allocator() noexcept
-    {	// construct default my_allocator (do nothing)
-    }
-
-    __declspec(allocator) pointer allocate(size_t size) const
-    {	// allocate array of _Count elements
-        std::cout << __FUNCTION__ << "  " << size << std::endl;
-        return static_cast<T*>(::operator new(size * sizeof(T)));
-    }
-
-    void deallocate(pointer p, size_t) const noexcept
-    {	// deallocate object at _Ptr, ignore size
-        ::operator delete(p);
-    }
-
-    template<class... _Types>
-    void construct(value_type p, _Types&&... _Args)
-    {	// construct _Objty(_Types...) at _Ptr
-        std::cout << __FUNCSIG__ << std::endl;
-        ::new (p) T(_STD forward<_Types>(_Args)...);
-    }
-
-    template<class T>
-    void destroy(T * p)
-    {	// destroy object at _Ptr
-        p->~T();
-    }
-};
-
-#endif 
+#elif _MSC_VER == 1700 // VS2012
 
 namespace std {
 
-#if _MSC_VER == 1700
-
-    template<>
+  template<>
     class allocator<double>
         : public _Allocator_base<double>
     {	// generic allocator for objects of class double
@@ -233,8 +211,77 @@ namespace std {
         }
     };
 
+} // namespace std {
 
-#elif _MSC_VER == 1800
+  // The simplest standards-conforming allocator
+template<typename T>
+class aligned_allocator
+{	// generic aligned_allocator for type double
+public:
+
+  typedef T value_type;
+
+  typedef value_type * pointer;
+  typedef value_type const *const_pointer;
+
+  template<class U>
+  struct rebind
+  {	// convert this type to allocator<_Other>
+    typedef aligned_allocator<U> other;
+  };
+
+  aligned_allocator()
+  {	// construct default aligned_allocator (do nothing)
+  }
+
+  aligned_allocator(aligned_allocator const &)
+  {	// construct default aligned_allocator (do nothing)
+  }
+
+  template<typename U>
+  aligned_allocator(aligned_allocator<U> const &)
+  {	// construct default aligned_allocator (do nothing)
+  }
+
+  bool operator==(aligned_allocator const &) const { return true; }
+
+  bool operator!=(aligned_allocator const &) const { return true; }
+
+  pointer allocate(size_t size) const
+  {	// allocate array of _Count elements
+    return static_cast<T*>(::operator new(size * sizeof(T)));
+  }
+
+  void deallocate(pointer p, size_t) const
+  {	// deallocate object at _Ptr, ignore size
+    ::operator delete(p);
+  }
+
+  void construct(double *p)
+  {	// default construct object at _Ptr
+    PRINT_CONSTRUCT_CALL(__FUNCSIG__);
+    ::new ((void *)p) double();
+  }
+
+  void construct(double *p, const double& val)
+  {	// construct object at _Ptr with value _Val
+    PRINT_CONSTRUCT_CALL(__FUNCSIG__);
+    ::new ((void *)p) double(val);
+  }
+
+  template<class U>
+  void destroy(U * p)
+  {	// destroy object at _Ptr
+    p->~U();
+  }
+
+};
+
+
+#elif _MSC_VER == 1800 // VS2013
+
+
+namespace std {
 
     // TEMPLATE CLASS allocator
     template<>
@@ -350,8 +397,80 @@ namespace std {
         }
     };
 
+} // namespace std {
 
-#elif _MSC_VER == 1900
+// The simplest standards-conforming allocator
+template<typename T>
+class aligned_allocator
+{	// generic aligned_allocator for type double
+public:
+
+  typedef T value_type;
+
+  typedef value_type * pointer;
+  typedef value_type const *const_pointer;
+
+  aligned_allocator() 
+  {	// construct default aligned_allocator (do nothing)
+  }
+
+  aligned_allocator(aligned_allocator const &) 
+  {	// construct default aligned_allocator (do nothing)
+  }
+
+  template<typename U>
+  aligned_allocator(aligned_allocator<U> const &) 
+  {	// construct default aligned_allocator (do nothing)
+  }
+
+  bool operator==(aligned_allocator const &) const  { return true; }
+
+  bool operator!=(aligned_allocator const &) const  { return true; }
+
+  pointer allocate(size_t size) const
+  {	// allocate array of _Count elements
+    return static_cast<T*>(::operator new(size * sizeof(T)));
+  }
+
+  void deallocate(pointer p, size_t) const 
+  {	// deallocate object at _Ptr, ignore size
+    ::operator delete(p);
+  }
+
+  void construct(double *p)
+  {	// default construct object at _Ptr
+    PRINT_CONSTRUCT_CALL(__FUNCSIG__);
+    ::new ((void *)p) double();
+  }
+
+  void construct(double *p, const double& val)
+  {	// construct object at _Ptr with value _Val
+    PRINT_CONSTRUCT_CALL(__FUNCSIG__);
+    ::new ((void *)p) double(val);
+  }
+
+  template<class U,
+    class... Args>
+    void construct(U * p, Args&&... args)
+  {	// construct U(TArgs...) at _Ptr
+    PRINT_CONSTRUCT_CALL(__FUNCSIG__);
+    ::new ((void *)p) U(_STD forward<Args>(args)...);
+  }
+
+
+  template<class U>
+  void destroy(U * p)
+  {	// destroy object at _Ptr
+    p->~U();
+  }
+
+};
+
+
+#elif _MSC_VER == 1900 // VS2015
+
+
+namespace std {
 
     // TEMPLATE CLASS allocator
     template<>
@@ -446,16 +565,167 @@ namespace std {
         }
     };
 
+} // namespace std {
+
+
+// The simplest standards-conforming allocator
+template<typename T>
+class aligned_allocator
+{	// generic aligned_allocator for type double
+public:
+
+  typedef T value_type;
+
+  typedef value_type * pointer;
+  typedef value_type const *const_pointer;
+
+  aligned_allocator() noexcept
+  {	// construct default aligned_allocator (do nothing)
+  }
+
+  aligned_allocator(aligned_allocator const &) noexcept
+  {	// construct default aligned_allocator (do nothing)
+  }
+
+  template<typename U>
+  aligned_allocator(aligned_allocator<U> const &) noexcept
+  {	// construct default aligned_allocator (do nothing)
+  }
+
+  bool operator==(aligned_allocator const &) const noexcept { return true; }
+
+  bool operator!=(aligned_allocator const &) const noexcept { return true; }
+
+  __declspec(allocator) pointer allocate(size_t size) const
+  {	// allocate array of _Count elements
+    return static_cast<T*>(::operator new(size * sizeof(T)));
+  }
+
+  void deallocate(pointer p, size_t) const noexcept
+  {	// deallocate object at _Ptr, ignore size
+    ::operator delete(p);
+  }
+
+  template<class U,
+    class... Args>
+    void construct(U * p, Args&&... args)
+  {	// construct U(TArgs...) at _Ptr
+    PRINT_CONSTRUCT_CALL(__FUNCSIG__);
+    ::new ((void *)p) U(_STD forward<Args>(args)...);
+  }
+
+
+  template<class U>
+  void destroy(U * p)
+  {	// destroy object at _Ptr
+    p->~U();
+  }
+
+};
+
 #else 
 
 #error The MS _MSC_VER compiler is not surported!
 
 #endif
 
-} // namespace std {
 
-template<typename T>
-using Vector = std::vector<T>;
+template<typename Vector> 
+void test()
+{
+  std::cout << "Vector<double> vec1(3);" << std::endl;
+  Vector vec1(1);
+  for (Vector::const_iterator i=vec1.begin() ; i!=vec1.end() ; ++i)
+  {
+    std::cout << " " << *i;
+  }
+  std::cout << std::endl;
+  std::cout << std::endl;
+
+  {
+    std::cout << "Vector<double> vec2(3,0.0);" << std::endl;
+    Vector vec2(1, 0.0);
+    for (Vector::const_iterator i=vec2.begin() ; i!=vec2.end() ; ++i)
+    {
+      std::cout << " " << *i;
+    }
+    std::cout << std::endl;
+    std::cout << std::endl;
+  }
+
+  {
+    std::cout << "Vector<double> vec2(vec1);" << std::endl;
+    Vector vec2(vec1);
+    for (Vector::const_iterator i=vec2.begin() ; i!=vec2.end() ; ++i)
+    {
+      std::cout << " " << *i;
+    }
+    std::cout << std::endl;
+    std::cout << std::endl;
+  }
+
+  {
+    std::cout << "Vector<double> vec2;" << std::endl;
+    std::cout << "vec2 = vec1;" << std::endl;
+    Vector vec2;
+    vec2 = vec1;
+    for (Vector::const_iterator i=vec2.begin() ; i!=vec2.end() ; ++i)
+    {
+      std::cout << " " << *i;
+    }
+    std::cout << std::endl;
+    std::cout << std::endl;
+  }
+
+  {
+    std::cout << "Vector<double> vec2(vec1.begin(), vec1.end());" << std::endl;
+    Vector vec2(vec1.begin(), vec1.end());
+    for (Vector::const_iterator i=vec2.begin() ; i!=vec2.end() ; ++i)
+    {
+      std::cout << " " << *i;
+    }
+    std::cout << std::endl;
+    std::cout << std::endl;
+  }
+
+  {
+    std::cout << "Vector<double> vec2;" << std::endl;
+    std::cout << "vec2.assign(vec1.begin(), vec1.end());" << std::endl;
+    Vector vec2;
+    vec2.assign(vec1.begin(), vec1.end());
+    for (Vector::const_iterator i=vec2.begin() ; i!=vec2.end() ; ++i)
+    {
+      std::cout << " " << *i;
+    }
+    std::cout << std::endl;
+    std::cout << std::endl;
+  }
+
+  {
+    std::cout << "Vector<double> vec2(vec1.data(), vec1.data()+ vec1.size());" << std::endl;
+    Vector vec2(&vec1.front(), &vec1.front() + vec1.size());
+    for (Vector::const_iterator i=vec2.begin() ; i!=vec2.end() ; ++i)
+    {
+      std::cout << " " << *i;
+    }
+    std::cout << std::endl;
+    std::cout << std::endl;
+  }
+
+  {
+    std::cout << "Vector<double> vec2;" << std::endl;
+    std::cout << "vec2.assign(vec1.data(), vec1.data()+ vec1.size());" << std::endl;
+    Vector vec2;
+    vec2.assign(&vec1.front(), &vec1.front() + vec1.size());
+    for (Vector::const_iterator i=vec2.begin() ; i!=vec2.end() ; ++i)
+    {
+      std::cout << " " << *i;
+    }
+    std::cout << std::endl;
+    std::cout << std::endl;
+  }
+
+}
 
 
 int main()
@@ -463,97 +733,22 @@ int main()
     std::cout << "_MSC_VER = " << _MSC_VER << std::endl;
     std::cout << std::endl;
     std::cout << std::endl;
-
-    std::cout << "Vector<double> vec1(3);" << std::endl;
-    Vector<double> vec1(3);
-    for (auto i : vec1)
     {
-        std::cout << " " << i;
-    }
-    std::cout << std::endl;
-    std::cout << std::endl;
+      std::cout << "********************************************************" << std::endl;
+      std::cout << "Test                                      std::vector<T>" << std::endl;
+      std::cout << "********************************************************" << std::endl;
+      std::cout << std::endl;
+      std::cout << std::endl;
 
-    {
-        std::cout << "Vector<double> vec2(3,0.0);" << std::endl;
-        Vector<double> vec2(3, 0.0);
-        for (auto i : vec2)
-        {
-            std::cout << " " << i;
-        }
-        std::cout << std::endl;
-        std::cout << std::endl;
-    }
+      test<std::vector<double>>();
 
-    {
-        std::cout << "Vector<double> vec2(vec1);" << std::endl;
-        Vector<double> vec2(vec1);
-        for (auto i : vec2)
-        {
-            std::cout << " " << i;
-        }
-        std::cout << std::endl;
-        std::cout << std::endl;
-    }
+      std::cout << "********************************************************" << std::endl;
+      std::cout << "Test      std::vector<double,aligned_allocator<double>>>" << std::endl;
+      std::cout << "********************************************************" << std::endl;
+      std::cout << std::endl;
+      std::cout << std::endl;
 
-    {
-        std::cout << "Vector<double> vec2;" << std::endl;
-        std::cout << "vec2 = vec1;" << std::endl;
-        Vector<double> vec2;
-        vec2 = vec1;
-        for (auto i : vec2)
-        {
-            std::cout << " " << i;
-        }
-        std::cout << std::endl;
-        std::cout << std::endl;
-    }
-
-    {
-        std::cout << "Vector<double> vec2(vec1.begin(), vec1.end());" << std::endl;
-        Vector<double> vec2(vec1.begin(), vec1.end());
-        for (auto i : vec2)
-        {
-            std::cout << " " << i;
-        }
-        std::cout << std::endl;
-        std::cout << std::endl;
-    }
-
-    {
-        std::cout << "Vector<double> vec2;" << std::endl;
-        std::cout << "vec2.assign(vec1.begin(), vec1.end());" << std::endl;
-        Vector<double> vec2;
-        vec2.assign(vec1.begin(), vec1.end());
-        for (auto i : vec2)
-        {
-            std::cout << " " << i;
-        }
-        std::cout << std::endl;
-        std::cout << std::endl;
-    }
-
-    {
-        std::cout << "Vector<double> vec2(vec1.data(), vec1.data()+ vec1.size());" << std::endl;
-        Vector<double> vec2(vec1.data(), vec1.data()+ vec1.size());
-        for (auto i : vec2)
-        {
-            std::cout << " " << i;
-        }
-        std::cout << std::endl;
-        std::cout << std::endl;
-    }
-
-    {
-        std::cout << "Vector<double> vec2;" << std::endl;
-        std::cout << "vec2.assign(vec1.data(), vec1.data()+ vec1.size());" << std::endl;
-        Vector<double> vec2;
-        vec2.assign(vec1.data(), vec1.data() + vec1.size());
-        for (auto i : vec2)
-        {
-            std::cout << " " << i;
-        }
-        std::cout << std::endl;
-        std::cout << std::endl;
+      test<std::vector<double,aligned_allocator<double>>>();
     }
 
     std::cout << std::endl << "Finished...." << std::endl;
